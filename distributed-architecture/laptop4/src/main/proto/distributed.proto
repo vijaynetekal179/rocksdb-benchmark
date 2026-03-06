@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package com.benchmark.distributed.grpc;
+
+option java_multiple_files = true;
+option java_package = "com.benchmark.distributed.grpc";
+option java_outer_classname = "DistributedProto";
+
+// A single database operation
+message Operation {
+    enum OpType {
+        READ = 0;
+        UPDATE = 1;
+        DELETE = 2;
+    }
+    OpType type = 1;
+    int32 user_id = 2;
+}
+
+// A batch of database operations to send in one trip
+message OperationBatch {
+    repeated Operation operations = 1;
+}
+
+// A simple acknowledgement that the batch was processed
+message BatchResult {
+    bool success = 1;
+}
+
+message AuthRequest {
+    string password = 1;
+}
+
+message AuthResponse {
+    bool success = 1;
+    string token = 2;  // JWT token returned on successful authentication
+}
+
+service DatabaseService {
+    // We emulate the initial connection handshake
+    rpc Authenticate(AuthRequest) returns (AuthResponse);
+
+    // Bidirectional streaming to push batches and receive acknowledgements
+    rpc StreamOperations(stream OperationBatch) returns (stream BatchResult);
+}
+
+service ApiService {
+    // We emulate the initial connection handshake
+    rpc Authenticate(AuthRequest) returns (AuthResponse);
+
+    // Bidirectional streaming to push batches and receive acknowledgements
+    rpc StreamOperations(stream OperationBatch) returns (stream BatchResult);
+}

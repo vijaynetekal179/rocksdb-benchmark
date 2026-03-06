@@ -1,0 +1,21 @@
+# Laptop 3: API Proxy Server #2 Startup Script
+# Spec: Similar to Laptop 1
+
+$ErrorActionPreference = "Stop"
+
+Write-Host "==========================================" -ForegroundColor Cyan
+Write-Host "  ROCKSDB DISTRIBUTED: API PROXY #2 (Laptop 3)" -ForegroundColor Cyan
+Write-Host "==========================================" -ForegroundColor Cyan
+
+# Find local IP to display to the user
+$ip = (Test-Connection -ComputerName (hostname) -Count 1).IPV4Address.IPAddressToString
+Write-Host "=> Your API Proxy IP should be: 192.168.0.130" -ForegroundColor Yellow
+Write-Host "=> (Detected local IP: $ip)" -ForegroundColor DarkGray
+Write-Host "=> Port: 50051" -ForegroundColor Yellow
+Write-Host "------------------------------------------"
+
+$dbIp = "192.168.0.118"
+
+Write-Host "Starting API Proxy #2 connected to DB ($dbIp)..." -ForegroundColor Green
+# Start JVM with moderate memory for proxying
+java -Xms1G -Xmx4G -cp "target\rocksdb-distributed-1.0-SNAPSHOT.jar;target\dependency\*" com.benchmark.distributed.proxy.ApiProxyServer
