@@ -155,13 +155,22 @@ public class BenchmarkClient {
 
         // Run for 60 seconds
         Thread.sleep(60_000);
+        System.out.println("\n⏳ Benchmark duration reached (60s). Waiting for in-flight requests to complete...");
         isRunning.set(false);
 
-        latch.await();
+        // Wait up to 3 minutes for all streams to finish their current batches
+        // gracefully
+        boolean completedGracefully = latch.await(3, TimeUnit.MINUTES);
+        if (!completedGracefully) {
+            System.err.println("⚠️ Warning: Not all streams completed within the 3-minute grace period!");
+        } else {
+            System.out.println("✅ All in-flight requests completed successfully.");
+        }
+
         long globalEndTime = System.currentTimeMillis();
 
-        channel1.shutdown().awaitTermination(5, TimeUnit.SECONDS);
-        channel2.shutdown().awaitTermination(5, TimeUnit.SECONDS);
+        channel1.shutdown().awaitTermination(1, TimeUnit.MINUTES);
+        channel2.shutdown().awaitTermination(1, TimeUnit.MINUTES);
 
         long totalOps = successfulOps.get() + failedOps.get();
         printResults(globalStartTime, globalEndTime, totalOps, successfulOps.get(), failedOps.get(),
@@ -228,7 +237,7 @@ public class BenchmarkClient {
                 }
 
                 requestObserver.onCompleted();
-                streamLatch.await(1, TimeUnit.MINUTES);
+                streamLatch.await(3, TimeUnit.MINUTES);
             } catch (Exception e) {
                 e.printStackTrace();
             } finally {
